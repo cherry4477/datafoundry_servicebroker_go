@@ -571,12 +571,9 @@ func getenv(env string) string {
 //定义日志和etcd的全局变量，以及其他变量
 var logger lager.Logger
 var etcdapi client.KeysAPI
-var servcieBrokerName string = "mongodb_aws"
+var servcieBrokerName string = "databaseshare"
 var etcdEndPoint, etcdUser, etcdPassword string
 var serviceBrokerPort string
-var mongoUrl string
-var mongoAdminUser string
-var mongoAdminPassword string
 
 func main() {
 	//初始化参数，参数应该从环境变量中获取
