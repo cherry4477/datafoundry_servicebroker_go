@@ -31,7 +31,7 @@ if (isset($_ENV['PMA_ABSOLUTE_URI'])) {
 /* Figure out hosts */
 
 /* Fallback to default linked */
-$hosts = array('servicebrokershare.cctlkf28famk.rds.cn-north-1.amazonaws.com.cn');
+$hosts = array('mysqlshare.servicebroker.dataos.io');
 
 /* Set by environment */
 if (!empty($_ENV['PMA_HOST'])) {
