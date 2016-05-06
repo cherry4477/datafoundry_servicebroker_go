@@ -53,7 +53,7 @@ func (handler *Greenplum_sharedHandler) DoProvision(instanceID string, details b
 	}
 
 	//为dashbord赋值 todo dashboard应该提供一个界面才对
-	DashboardURL := "http://" + postgresDashboard + "?db=" + dbname + "&user=" + newusername + "&pass=" + newpassword
+	DashboardURL := "http://" + greenplumDashboard + "?db=" + dbname + "&user=" + newusername + "&pass=" + newpassword
 
 	//赋值隐藏属性
 	myServiceInfo := ServiceInfo{
