@@ -1,5 +1,5 @@
 # Switch back to stable once 3.4 is out
-FROM alpine:edge
+FROM alpine
 
 RUN apk add --no-cache php-cli php-mysqli php-ctype php-xml php-gd php-zlib php-openssl php-curl php-opcache php-json php-mcrypt curl
 
