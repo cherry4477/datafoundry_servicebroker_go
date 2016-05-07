@@ -204,7 +204,12 @@ func (myBroker *myServiceBroker) Provision(
 
 	//创建绑定目录
 	_, err = etcdapi.Set(context.Background(), "/servicebroker/"+servcieBrokerName+"/instance/"+instanceID+"/binding", "", &client.SetOptions{Dir: true})
-
+	if err != nil {
+		logger.Error("Can not create banding directory of  "+instanceID+" in etcd", err) //todo都应该改为日志key
+		return brokerapi.ProvisionedServiceSpec{}, err
+	} else {
+		logger.Debug("Successful create banding directory of  "+instanceID+" in etcd", nil)
+	}
 	//完成所有操作后，返回DashboardURL和是否异步的标志
 	logger.Info("Successful create instance " + instanceID)
 	return provsiondetail, nil
@@ -352,7 +357,12 @@ func (myBroker *myServiceBroker) Bind(instanceID, bindingID string, details brok
 
 	//从etcd中取得参数。
 	resp, err = etcdapi.Get(context.Background(), "/servicebroker/"+servcieBrokerName+"/instance/"+instanceID, &client.GetOptions{Recursive: true}) //改为环境变量
-
+	if err != nil {
+		logger.Error("Can not get instance information from etcd", err) //所有这些出错消息最好命名为常量，放到开始的时候
+		return brokerapi.Binding{}, brokerapi.ErrInstanceDoesNotExist
+	} else {
+		logger.Debug("Successful get instance information from etcd.")
+	}
 	for i := 0; i < len(resp.Node.Nodes); i++ {
 		if !resp.Node.Nodes[i].Dir {
 			switch strings.ToLower(resp.Node.Nodes[i].Key) {
