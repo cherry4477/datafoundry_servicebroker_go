@@ -197,8 +197,8 @@ func (handler *Greenplum_sharedHandler) DoUnbind(myServiceInfo *ServiceInfo, myc
 
 func init() {
 	register("Greenplum_Experimental", &Greenplum_sharedHandler{})
-	postgresUrl = getenv("GREENPLUMURL")                     //共享实例的地址
-	postgresUser = getenv("GREENPLUMUSER")                   //共享实例的mongodb地址
-	postgresAdminPassword = getenv("GREENPLUMADMINPASSWORD") //共享实例和独立实例的管理员密码
-	postgresDashboard = getenv("GREENPLUMDASHBOARD")         //dashboardurl
+	greenplumUrl = getenv("GREENPLUMURL")                     //共享实例的地址
+	greenplumUser = getenv("GREENPLUMUSER")                   //共享实例的mongodb地址
+	greenplumAdminPassword = getenv("GREENPLUMADMINPASSWORD") //共享实例和独立实例的管理员密码
+	greenplumDashboard = getenv("GREENPLUMDASHBOARD")         //dashboardurl
 }
