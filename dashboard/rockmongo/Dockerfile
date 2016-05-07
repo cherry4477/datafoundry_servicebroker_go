@@ -1,4 +1,4 @@
-FROM php:5-apache
+FROM registry.dataos.io/library/php:5-apache
 
 RUN \
   apt-get update && \
