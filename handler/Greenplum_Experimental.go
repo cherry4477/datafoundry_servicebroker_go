@@ -16,7 +16,7 @@ type Greenplum_sharedHandler struct{}
 
 func (handler *Greenplum_sharedHandler) DoProvision(instanceID string, details brokerapi.ProvisionDetails, asyncAllowed bool) (brokerapi.ProvisionedServiceSpec, ServiceInfo, error) {
 	//初始化postgres的链接串
-	db, err := sql.Open("postgres", "postgres://"+postgresUser+":"+postgresAdminPassword+"@"+postgresUrl+"?sslmode=disable")
+	db, err := sql.Open("postgres", "postgres://"+greenplumUser+":"+greenplumAdminPassword+"@"+greenplumUrl+"?sslmode=disable")
 
 	if err != nil {
 		return brokerapi.ProvisionedServiceSpec{}, ServiceInfo{}, err
@@ -57,9 +57,9 @@ func (handler *Greenplum_sharedHandler) DoProvision(instanceID string, details b
 
 	//赋值隐藏属性
 	myServiceInfo := ServiceInfo{
-		Url:            postgresUrl,
-		Admin_user:     postgresUser,
-		Admin_password: postgresAdminPassword,
+		Url:            greenplumUrl,
+		Admin_user:     greenplumUser,
+		Admin_password: greenplumAdminPassword,
 		Database:       dbname,
 		User:           newusername,
 		Password:       newpassword,
@@ -81,7 +81,7 @@ func (handler *Greenplum_sharedHandler) DoLastOperation(myServiceInfo *ServiceIn
 func (handler *Greenplum_sharedHandler) DoDeprovision(myServiceInfo *ServiceInfo, asyncAllowed bool) (brokerapi.IsAsync, error) {
 
 	//初始化postgres的链接串
-	db, err := sql.Open("postgres", "postgres://"+postgresUser+":"+postgresAdminPassword+"@"+postgresUrl+"?sslmode=disable")
+	db, err := sql.Open("postgres", "postgres://"+greenplumUser+":"+greenplumAdminPassword+"@"+greenplumUrl+"?sslmode=disable")
 
 	if err != nil {
 		return brokerapi.IsAsync(false), err
@@ -116,7 +116,7 @@ func (handler *Greenplum_sharedHandler) DoDeprovision(myServiceInfo *ServiceInfo
 
 func (handler *Greenplum_sharedHandler) DoBind(myServiceInfo *ServiceInfo, bindingID string, details brokerapi.BindDetails) (brokerapi.Binding, Credentials, error) {
 	//初始化postgres的链接串
-	db, err := sql.Open("postgres", "postgres://"+postgresUser+":"+postgresAdminPassword+"@"+postgresUrl+"?sslmode=disable")
+	db, err := sql.Open("postgres", "postgres://"+greenplumUser+":"+greenplumAdminPassword+"@"+greenplumUrl+"?sslmode=disable")
 
 	if err != nil {
 		return brokerapi.Binding{}, Credentials{}, err
@@ -162,7 +162,7 @@ func (handler *Greenplum_sharedHandler) DoBind(myServiceInfo *ServiceInfo, bindi
 
 func (handler *Greenplum_sharedHandler) DoUnbind(myServiceInfo *ServiceInfo, mycredentials *Credentials) error {
 	//初始化postgres的链接串
-	db, err := sql.Open("postgres", "postgres://"+postgresUser+":"+postgresAdminPassword+"@"+postgresUrl+"?sslmode=disable")
+	db, err := sql.Open("postgres", "postgres://"+greenplumUser+":"+greenplumAdminPassword+"@"+greenplumUrl+"?sslmode=disable")
 
 	if err != nil {
 		return err
