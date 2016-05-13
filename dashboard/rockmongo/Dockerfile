@@ -1,4 +1,4 @@
-FROM library/php:5-apache
+FROM registry.io/library/php:5-apache
 
 RUN \
   apt-get update && \
