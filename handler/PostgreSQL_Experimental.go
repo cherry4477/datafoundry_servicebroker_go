@@ -145,6 +145,12 @@ func (handler *Postgresql_sharedHandler) DoBind(myServiceInfo *ServiceInfo, bind
 		return brokerapi.Binding{}, Credentials{}, err
 	}
 
+	_, err = db.Query("GRANT ALL ON ALL TABLES IN SCHEMA public TO " + newusername)
+
+	if err != nil {
+		return brokerapi.Binding{}, Credentials{}, err
+	}
+
 	mycredentials := Credentials{
 		Uri:      "postgres://" + newusername + ":" + newpassword + "@" + myServiceInfo.Url + "/" + myServiceInfo.Database,
 		Hostname: strings.Split(myServiceInfo.Url, ":")[0],
