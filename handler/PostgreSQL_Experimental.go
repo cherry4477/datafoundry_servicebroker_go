@@ -115,6 +115,7 @@ func (handler *Postgresql_sharedHandler) DoDeprovision(myServiceInfo *ServiceInf
 }
 
 func (handler *Postgresql_sharedHandler) DoBind(myServiceInfo *ServiceInfo, bindingID string, details brokerapi.BindDetails) (brokerapi.Binding, Credentials, error) {
+	/* 因为aws rds 的postgresql没有给超级用户的权限，所以授权有问题，改为直接返回dashboard的用户名
 	//初始化postgres的链接串
 	db, err := sql.Open("postgres", "postgres://"+postgresUser+":"+postgresAdminPassword+"@"+postgresUrl+"?sslmode=disable")
 
@@ -150,13 +151,14 @@ func (handler *Postgresql_sharedHandler) DoBind(myServiceInfo *ServiceInfo, bind
 	if err != nil {
 		return brokerapi.Binding{}, Credentials{}, err
 	}
+	*/
 
 	mycredentials := Credentials{
-		Uri:      "postgres://" + newusername + ":" + newpassword + "@" + myServiceInfo.Url + "/" + myServiceInfo.Database,
+		Uri:      "postgres://" + myServiceInfo.User + ":" + myServiceInfo.Password + "@" + myServiceInfo.Url + "/" + myServiceInfo.Database,
 		Hostname: strings.Split(myServiceInfo.Url, ":")[0],
 		Port:     strings.Split(myServiceInfo.Url, ":")[1],
-		Username: newusername,
-		Password: newpassword,
+		Username: myServiceInfo.User,
+		Password: myServiceInfo.Password,
 		Name:     myServiceInfo.Database,
 	}
 
@@ -167,6 +169,7 @@ func (handler *Postgresql_sharedHandler) DoBind(myServiceInfo *ServiceInfo, bind
 }
 
 func (handler *Postgresql_sharedHandler) DoUnbind(myServiceInfo *ServiceInfo, mycredentials *Credentials) error {
+	/*由于aws rds postgresql的原因，这段直接取消了，没有创建，就没有删除
 	//初始化postgres的链接串
 	db, err := sql.Open("postgres", "postgres://"+postgresUser+":"+postgresAdminPassword+"@"+postgresUrl+"?sslmode=disable")
 
@@ -196,6 +199,7 @@ func (handler *Postgresql_sharedHandler) DoUnbind(myServiceInfo *ServiceInfo, my
 	if err != nil {
 		return err
 	}
+	*/
 
 	return nil
 
