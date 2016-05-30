@@ -39,8 +39,8 @@ func (handler *Greenplum_sharedHandler) DoProvision(instanceID string, details b
 	if err != nil {
 		return brokerapi.ProvisionedServiceSpec{}, ServiceInfo{}, err
 	}
-	//_, err = db.Query("CREATE DATABASE " + dbname + " WITH OWNER =" + newusername + " ENCODING = 'UTF8'")
-	_, err = db.Query("CREATE DATABASE " + dbname + " ENCODING = 'UTF8'")
+	_, err = db.Query("CREATE DATABASE " + dbname + " WITH OWNER =" + newusername + " ENCODING = 'UTF8'")
+	//_, err = db.Query("CREATE DATABASE " + dbname + " ENCODING = 'UTF8'")
 
 	if err != nil {
 		return brokerapi.ProvisionedServiceSpec{}, ServiceInfo{}, err
