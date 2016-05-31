@@ -115,6 +115,7 @@ func (handler *Greenplum_sharedHandler) DoDeprovision(myServiceInfo *ServiceInfo
 }
 
 func (handler *Greenplum_sharedHandler) DoBind(myServiceInfo *ServiceInfo, bindingID string, details brokerapi.BindDetails) (brokerapi.Binding, Credentials, error) {
+	/*修改，返回一个用户名和密码
 	//初始化postgres的链接串
 	db, err := sql.Open("postgres", "postgres://"+greenplumUser+":"+greenplumAdminPassword+"@"+greenplumUrl+"/share?sslmode=disable")
 
@@ -144,13 +145,14 @@ func (handler *Greenplum_sharedHandler) DoBind(myServiceInfo *ServiceInfo, bindi
 	if err != nil {
 		return brokerapi.Binding{}, Credentials{}, err
 	}
+	*/
 
 	mycredentials := Credentials{
-		Uri:      "postgres://" + newusername + ":" + newpassword + "@" + myServiceInfo.Url + "/" + myServiceInfo.Database,
+		Uri:      "postgres://" + myServiceInfo.User + ":" + myServiceInfo.Password + "@" + myServiceInfo.Url + "/" + myServiceInfo.Database,
 		Hostname: strings.Split(myServiceInfo.Url, ":")[0],
 		Port:     strings.Split(myServiceInfo.Url, ":")[1],
-		Username: newusername,
-		Password: newpassword,
+		Username: myServiceInfo.User,
+		Password: myServiceInfo.Password,
 		Name:     myServiceInfo.Database,
 	}
 
@@ -161,6 +163,7 @@ func (handler *Greenplum_sharedHandler) DoBind(myServiceInfo *ServiceInfo, bindi
 }
 
 func (handler *Greenplum_sharedHandler) DoUnbind(myServiceInfo *ServiceInfo, mycredentials *Credentials) error {
+	/*取消用户的区分
 	//初始化postgres的链接串
 	db, err := sql.Open("postgres", "postgres://"+greenplumUser+":"+greenplumAdminPassword+"@"+greenplumUrl+"/share?sslmode=disable")
 
@@ -190,6 +193,7 @@ func (handler *Greenplum_sharedHandler) DoUnbind(myServiceInfo *ServiceInfo, myc
 	if err != nil {
 		return err
 	}
+	*/
 
 	return nil
 
