@@ -8,6 +8,8 @@ if [ ! -f /www/config.secret.inc.php ] ; then
 EOT
 fi
 
+echo 'session.save_path = "/tmp"' >> /etc/php/php.ini
+
 exec php -S 0.0.0.0:80 -t /www/ \
     -d upload_max_filesize=$PHP_UPLOAD_MAX_FILESIZE \
     -d post_max_size=$PHP_UPLOAD_MAX_FILESIZE \
