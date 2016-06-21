@@ -56,6 +56,7 @@ func (myBroker *myServiceBroker) Services() []brokerapi.Service {
 	resp, err := etcdapi.Get(context.Background(), "/servicebroker/"+servcieBrokerName+"/catalog", &client.GetOptions{Recursive: true}) //改为环境变量
 	if err != nil {
 		logger.Error("Can not get catalog information from etcd", err) //所有这些出错消息最好命名为常量，放到开始的时候
+		return []brokerapi.Service{}
 	} else {
 		logger.Debug("Successful get catalog information from etcd. NodeInfo is " + resp.Node.Key)
 	}
@@ -103,11 +104,12 @@ func (myBroker *myServiceBroker) Services() []brokerapi.Service {
 					}
 					//装配plan需要返回的值，按照有多少个plan往里面装
 					myPlans = append(myPlans, myPlan)
-
+					//重置myPlan
+					myPlan = brokerapi.ServicePlan{}
 				}
 				//将装配好的Plan对象赋值给Service
 				myService.Plans = myPlans
-				//清空myPlans
+				//重置myPlans
 				myPlans = []brokerapi.ServicePlan{}
 
 			}
@@ -273,7 +275,6 @@ func (myBroker *myServiceBroker) Deprovision(instanceID string, details brokerap
 	}
 
 	var servcie_id, plan_id string
-
 	//从etcd中取得参数。
 	for i := 0; i < len(resp.Node.Nodes); i++ {
 		if !resp.Node.Nodes[i].Dir {
@@ -527,13 +528,22 @@ func etcdget(key string) (*client.Response, error) {
 }
 
 func etcdset(key string, value string) (*client.Response, error) {
+	n := 5
+	
+RETRY:
 	resp, err := etcdapi.Set(context.Background(), key, value, nil)
 	if err != nil {
 		logger.Error("Can not set "+key+" from etcd", err)
+		n --
+		if n > 0 {
+			goto RETRY
+		}
+		
+		return nil, err
 	} else {
 		logger.Debug("Successful set " + key + " from etcd. value is " + value)
+		return resp, nil
 	}
-	return resp, err
 }
 
 func findServiceNameInCatalog(service_id string) string {
@@ -604,7 +614,7 @@ func main() {
 		Endpoints: []string{etcdEndPoint},
 		Transport: client.DefaultTransport,
 		// set timeout per request to fail fast when the target endpoint is unavailable
-		HeaderTimeoutPerRequest: time.Second,
+		HeaderTimeoutPerRequest: time.Second * 5,
 		Username:                etcdUser,
 		Password:                etcdPassword,
 	}
@@ -643,6 +653,5 @@ func main() {
 	fmt.Println("START SERVICE BROKER", servcieBrokerName)
 	brokerAPI := brokerapi.New(serviceBroker, logger, credentials)
 	http.Handle("/", brokerAPI)
-	http.ListenAndServe(":"+serviceBrokerPort, nil)
-
+	fmt.Println(http.ListenAndServe(":"+serviceBrokerPort, nil))
 }
