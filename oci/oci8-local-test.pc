@@ -1,0 +1,10 @@
+prefix=/home/lx/golang_workspace/src/github.com/asiainfoLDP/datafoundry_servicebroker_go/oci/12_1
+libdir=${prefix}
+includedir=${prefix}/sdk/include/
+
+Name: oci8
+Description: Oracle Instant Client
+Version: 12.1
+Cflags: -I${includedir}
+Libs: -L${libdir} -lclntsh -lmql1 -lipc1 -lnnz12 -lons -lclntshcore
+

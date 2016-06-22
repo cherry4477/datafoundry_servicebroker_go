@@ -19,8 +19,9 @@ WORKDIR /usr/local/go/src/github.com/asiainfoLDP/datafoundry_servicebroker_go
 ENV NLS_LANG=AMERICAN_AMERICA.AL32UTF8
 ENV PKG_CONFIG_PATH=/usr/local/lib/pkgconfig
 RUN mkdir -p /usr/local/lib/pkgconfig && cp ./oci/oci8.pc /usr/local/lib/pkgconfig
-RUN echo $(pwd)/oci/12_1 >> /etc/ld.so.conf
-RUN ldconfig
+RUN tar xzvf oci/12_1/liboci.tar.gz -C oci/12_1 \
+    && echo $(pwd)/oci/12_1 >> /etc/ld.so.conf \
+    && ldconfig
 
 #RUN go get github.com/tools/godep \
 #    && godep go build 
