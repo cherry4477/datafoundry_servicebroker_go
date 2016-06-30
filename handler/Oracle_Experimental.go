@@ -33,113 +33,17 @@ type Oracle_sharedHandler struct{}
 
 func (handler *Oracle_sharedHandler) DoProvision(instanceID string, details brokerapi.ProvisionDetails, asyncAllowed bool) (brokerapi.ProvisionedServiceSpec, ServiceInfo, error) {
 	//初始化oracle的链接串
-	/*
-	db, err := sql.Open("oci8", oracleAdminConnString)
-	if err != nil {
-		return brokerapi.ProvisionedServiceSpec{}, ServiceInfo{}, err
-	}
-	defer db.Close()
-	
-	//测试是否能联通
-	err = db.Ping()
-	if err != nil {
-		return brokerapi.ProvisionedServiceSpec{}, ServiceInfo{}, err
-	}
-
-	//不能以instancdID为数据库名字，需要创建一个不带-的数据库名
-	dbname := getguid()[0:15]
-	_, err = db.Query("CREATE DATABASE " + dbname + " DEFAULT CHARACTER SET utf8 COLLATE utf8_general_ci")
-
-	if err != nil {
-		return brokerapi.ProvisionedServiceSpec{}, ServiceInfo{}, err
-	}
-
-	newusername := getguid()[0:15]
-	newpassword := getguid()[0:15]
-
-	_, err = db.Query("GRANT ALL ON " + dbname + ".* TO '" + newusername + "'@'%' IDENTIFIED BY '" + newpassword + "'")
-
-	if err != nil {
-		return brokerapi.ProvisionedServiceSpec{}, ServiceInfo{}, err
-	}
-	*/
-
-	//为dashbord赋值 todo dashboard应该提供一个界面才对
-	DashboardURL := "" // "http://" + newusername + ":" + newpassword + "@" + oracleDashboard + "?db=" + dbname
-
-	//赋值隐藏属性
-	myServiceInfo := ServiceInfo{
-		//Url:            oracleAddress,
-		//Admin_user:     "root",
-		//Admin_password: oracleAdminPassword,
-		//Database:       dbname,
-		//User:           newusername,
-		//Password:       newpassword,
-	}
-
-	provsiondetail := brokerapi.ProvisionedServiceSpec{DashboardURL: DashboardURL, IsAsync: false}
-
-	return provsiondetail, myServiceInfo, nil
-}
-
-func (handler *Oracle_sharedHandler) DoLastOperation(myServiceInfo *ServiceInfo) (brokerapi.LastOperation, error) {
-	//因为是同步模式，协议里面并没有说怎么处理啊，统一反馈成功吧！
-	return brokerapi.LastOperation{
-		State:       brokerapi.Succeeded,
-		Description: "It's a sync method!",
-	}, nil
-}
-
-func (handler *Oracle_sharedHandler) DoDeprovision(myServiceInfo *ServiceInfo, asyncAllowed bool) (brokerapi.IsAsync, error) {
-
-	//初始化oracle的链接串
-	//db, err := sql.Open("oracle", myServiceInfo.Admin_user+":"+myServiceInfo.Admin_password+"@tcp("+myServiceInfo.Url+")/")
-	/*
-	db, err := sql.Open("oci8", oracleAdminConnString)
-	if err != nil {
-		return brokerapi.IsAsync(false), err
-	}
-	defer db.Close()
-	
-	//测试是否能联通
-	err = db.Ping()
-	if err != nil {
-		return brokerapi.IsAsync(false), err
-	}
-
-	//删除数据库
-	_, err = db.Query("DROP DATABASE " + myServiceInfo.Database)
-
-	if err != nil {
-		return brokerapi.IsAsync(false), err
-	}
-
-	//删除用户
-	_, err = db.Query("DROP USER " + myServiceInfo.User)
-
-	if err != nil {
-		return brokerapi.IsAsync(false), err
-	}
-	*/
-
-	//非异步，无错误的返回
-	return brokerapi.IsAsync(false), nil
-
-}
-
-func (handler *Oracle_sharedHandler) DoBind(myServiceInfo *ServiceInfo, bindingID string, details brokerapi.BindDetails) (brokerapi.Binding, Credentials, error) {
-	//初始化oracle的链接串
 	//db, err := sql.Open("oracle", myServiceInfo.Admin_user+":"+myServiceInfo.Admin_password+"@tcp("+myServiceInfo.Url+")/")
 	db, err := sql.Open("oci8", oracleAdminConnString)
 	if err != nil {
-		return brokerapi.Binding{}, Credentials{}, err
+		return brokerapi.ProvisionedServiceSpec{}, ServiceInfo{}, err
 	}
 	defer db.Close()
 	
 	//测试是否能联通
 	err = db.Ping()
 	if err != nil {
-		return brokerapi.Binding{}, Credentials{}, err
+		return brokerapi.ProvisionedServiceSpec{}, ServiceInfo{}, err
 	}
 	
 	// http://docs.aws.amazon.com/AmazonRDS/latest/UserGuide/Appendix.Oracle.CommonDBATasks.html#Appendix.Oracle.CommonDBATasks.RestrictedSession
@@ -155,7 +59,7 @@ func (handler *Oracle_sharedHandler) DoBind(myServiceInfo *ServiceInfo, bindingI
 		println("create tablespace: ", sql_createTS)
 		_, err = db.Query(sql_createTS)
 		if err != nil {
-			return brokerapi.Binding{}, Credentials{}, err
+			return brokerapi.ProvisionedServiceSpec{}, ServiceInfo{}, err
 		}
 		
 		defer func() {
@@ -179,7 +83,7 @@ func (handler *Oracle_sharedHandler) DoBind(myServiceInfo *ServiceInfo, bindingI
 		println("alter tablespace: ", sql_alterTS)
 		_, err = db.Query(sql_alterTS)
 		if err != nil {
-			return brokerapi.Binding{}, Credentials{}, err
+			return brokerapi.ProvisionedServiceSpec{}, ServiceInfo{}, err
 		}
 	}
 	
@@ -189,7 +93,7 @@ func (handler *Oracle_sharedHandler) DoBind(myServiceInfo *ServiceInfo, bindingI
 		//println("create temp tablespace: ", sql_tempTS)
 		//_, err = db.Query(sql_tempTS)
 		//if err != nil {
-		//	return brokerapi.Binding{}, Credentials{}, err
+		//	return brokerapi.ProvisionedServiceSpec{}, ServiceInfo{}, err
 		//}
 	//}
 
@@ -203,7 +107,7 @@ func (handler *Oracle_sharedHandler) DoBind(myServiceInfo *ServiceInfo, bindingI
 	//println("create user: ", sql_createUser)
 	//_, err = db.Query(sql_createUser)
 	//if err != nil {
-	//	return brokerapi.Binding{}, Credentials{}, err
+	//	return brokerapi.ProvisionedServiceSpec{}, ServiceInfo{}, err
 	//}
 	
 	{
@@ -212,7 +116,7 @@ func (handler *Oracle_sharedHandler) DoBind(myServiceInfo *ServiceInfo, bindingI
 		_, err = db.Query(sql_createUser)
 		if err != nil {
 			println("create user err:", err.Error())
-			return brokerapi.Binding{}, Credentials{}, err
+			return brokerapi.ProvisionedServiceSpec{}, ServiceInfo{}, err
 		}
 		
 		defer func() {
@@ -237,7 +141,7 @@ func (handler *Oracle_sharedHandler) DoBind(myServiceInfo *ServiceInfo, bindingI
 		println("alter user: ", sql_alterUser)
 		_, err = db.Query(sql_alterUser)
 		if err != nil {
-			return brokerapi.Binding{}, Credentials{}, err
+			return brokerapi.ProvisionedServiceSpec{}, ServiceInfo{}, err
 		}
 	}
 	
@@ -246,7 +150,7 @@ func (handler *Oracle_sharedHandler) DoBind(myServiceInfo *ServiceInfo, bindingI
 		println("grant user: ", sql_grantUser)
 		_, err = db.Query(sql_grantUser)
 		if err != nil {
-			return brokerapi.Binding{}, Credentials{}, err
+			return brokerapi.ProvisionedServiceSpec{}, ServiceInfo{}, err
 		}
 	}
 	
@@ -324,14 +228,95 @@ CREATE TABLE %s
 	}()
 	*/
 	
+	
+	
+	
+	//为dashbord赋值 todo dashboard应该提供一个界面才对
+	DashboardURL := "" // "http://" + newusername + ":" + newpassword + "@" + oracleDashboard + "?db=" + dbname
+
+	//赋值隐藏属性
+	myServiceInfo := ServiceInfo{
+		//Url:            oracleAddress,
+		//Admin_user:     "root",
+		//Admin_password: oracleAdminPassword,
+		Database:       newdbname,
+		User:           newusername,
+		Password:       newpassword,
+	}
+
+	provsiondetail := brokerapi.ProvisionedServiceSpec{DashboardURL: DashboardURL, IsAsync: false}
+
+	return provsiondetail, myServiceInfo, nil
+}
+
+func (handler *Oracle_sharedHandler) DoLastOperation(myServiceInfo *ServiceInfo) (brokerapi.LastOperation, error) {
+	//因为是同步模式，协议里面并没有说怎么处理啊，统一反馈成功吧！
+	return brokerapi.LastOperation{
+		State:       brokerapi.Succeeded,
+		Description: "It's a sync method!",
+	}, nil
+}
+
+func (handler *Oracle_sharedHandler) DoDeprovision(myServiceInfo *ServiceInfo, asyncAllowed bool) (brokerapi.IsAsync, error) {
+
+
+	//初始化oracle的链接串
+	//db, err := sql.Open("oracle", myServiceInfo.Admin_user+":"+myServiceInfo.Admin_password+"@tcp("+myServiceInfo.Url+")/")
+	db, err := sql.Open("oci8", oracleAdminConnString)
+	if err != nil {
+		return brokerapi.IsAsync(false), err
+	}
+	defer db.Close()
+	
+	//测试是否能联通
+	err = db.Ping()
+	if err != nil {
+		return brokerapi.IsAsync(false), err
+	}
+
+	//删除用户
+	_, err1 := db.Query(fmt.Sprintf("drop user %s cascade", myServiceInfo.User))
+	if err1 == nil {
+		println("user", myServiceInfo.User, "was dropped")
+	} else if strings.Index (err1.Error(), "ORA-01918") >= 0 { // usere doesn't exist (already deleted)
+		err1 = nil
+	}
+	
+	//删除数据库
+	_, err2 := db.Query(fmt.Sprintf("drop tablespace %s including contents and datafiles", myServiceInfo.Database))
+	if err2 == nil {
+		println("tablespace", myServiceInfo.Database, "was dropped")
+	} else if strings.Index (err2.Error(), "ORA-00959") >= 0 { // tablespace doesn't exist (already deleted)
+		err2 = nil
+	}
+	
+	if err1 != nil {
+		println("unbind drop user failed:", err1.Error())
+		if err2 == nil {
+			return brokerapi.IsAsync(false), err1
+		}
+	}
+
+	if err2 != nil {
+		println("unbind drop tablesapce failed:", err2.Error())
+		return brokerapi.IsAsync(false), err2
+	}
+
+	//非异步，无错误的返回
+	return brokerapi.IsAsync(false), nil
+
+}
+
+func (handler *Oracle_sharedHandler) DoBind(myServiceInfo *ServiceInfo, bindingID string, details brokerapi.BindDetails) (brokerapi.Binding, Credentials, error) {
+	
 	mycredentials := Credentials{
 		//Uri:      "oracle://" + newusername + ":" + newpassword + "@" + myServiceInfo.Url + "/" + myServiceInfo.Database,
-		Uri:      OracleConnString(newusername, newpassword, oracleAddress, oracleSID),
+		Uri:      OracleConnString(myServiceInfo.Database, myServiceInfo.Password, oracleAddress, oracleSID),
 		Hostname: strings.Split(oracleAddress, ":")[0],
 		Port:     strings.Split(oracleAddress, ":")[1],
-		Username: newusername,
-		Password: newpassword,
-		Name:     newdbname,
+		Username: myServiceInfo.User,
+		Password: myServiceInfo.Password,
+		Name:     myServiceInfo.Database,
 	}
 
 	myBinding := brokerapi.Binding{Credentials: mycredentials}
@@ -341,47 +326,6 @@ CREATE TABLE %s
 }
 
 func (handler *Oracle_sharedHandler) DoUnbind(myServiceInfo *ServiceInfo, mycredentials *Credentials) error {
-	//初始化oracle的链接串
-	//db, err := sql.Open("oracle", myServiceInfo.Admin_user+":"+myServiceInfo.Admin_password+"@tcp("+myServiceInfo.Url+")/")
-	db, err := sql.Open("oci8", oracleAdminConnString)
-	if err != nil {
-		return err
-	}
-	defer db.Close()
-	
-	//测试是否能联通
-	err = db.Ping()
-	if err != nil {
-		return err
-	}
-
-	//删除用户
-	_, err1 := db.Query(fmt.Sprintf("drop user %s cascade", mycredentials.Username))
-	if err1 == nil {
-		println("user", mycredentials.Username, "was dropped")
-	} else if strings.Index (err1.Error(), "ORA-01918") >= 0 { // usere doesn't exist (already deleted)
-		err1 = nil
-	}
-	
-	//删除数据库
-	_, err2 := db.Query(fmt.Sprintf("drop tablespace %s including contents and datafiles", mycredentials.Name))
-	if err2 == nil {
-		println("tablespace", mycredentials.Name, "was dropped")
-	} else if strings.Index (err2.Error(), "ORA-00959") >= 0 { // tablespace doesn't exist (already deleted)
-		err2 = nil
-	}
-	
-	if err1 != nil {
-		println("unbind drop user failed:", err1.Error())
-		if err2 == nil {
-			return err1
-		}
-	}
-
-	if err2 != nil {
-		println("unbind drop tablesapce failed:", err2.Error())
-		return err2
-	}
 
 	return nil
 
