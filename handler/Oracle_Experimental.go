@@ -13,28 +13,29 @@ import (
 // https://github.com/mattn/go-oci8
 // http://www.oracle.com/technetwork/topics/linuxx86-64soft-092277.html
 
-var oracleAdminUser string
-var oracleAdminPassword string
-var oracleAddress string
-var oracleSID string
-var oracleDashboard string
+//var oracleAdminUser string
+//var oracleAdminPassword string
+//var oracleAddress string
+//var oracleSID string
+//var oracleDashboard string
 
 // user:password@host:port/sid
 // sid is the system id to identify a database
-func OracleConnString(user, password, address, sid string) string {
-	return fmt.Sprintf("%s:%s@%s/%s", user, password, address, sid)
-}
+//func OracleConnString(user, password, address, sid string) string {
+//	return fmt.Sprintf("%s:%s@%s/%s", user, password, address, sid)
+//}
 
-var oracleAdminConnString string
+//var oracleAdminConnString string
 
 // ...
 
-type Oracle_sharedHandler struct{}
+//type Oracle_sharedHandler struct{}
 
-func (handler *Oracle_sharedHandler) DoProvision(instanceID string, details brokerapi.ProvisionDetails, asyncAllowed bool) (brokerapi.ProvisionedServiceSpec, ServiceInfo, error) {
+
+func (handler *Oracle_Handler) DoProvision(instanceID string, details brokerapi.ProvisionDetails, asyncAllowed bool) (brokerapi.ProvisionedServiceSpec, ServiceInfo, error) {
 	//初始化oracle的链接串
 	//db, err := sql.Open("oracle", myServiceInfo.Admin_user+":"+myServiceInfo.Admin_password+"@tcp("+myServiceInfo.Url+")/")
-	db, err := sql.Open("oci8", oracleAdminConnString)
+	db, err := sql.Open("oci8", handler.connString)
 	if err != nil {
 		return brokerapi.ProvisionedServiceSpec{}, ServiceInfo{}, err
 	}
@@ -249,7 +250,7 @@ CREATE TABLE %s
 	return provsiondetail, myServiceInfo, nil
 }
 
-func (handler *Oracle_sharedHandler) DoLastOperation(myServiceInfo *ServiceInfo) (brokerapi.LastOperation, error) {
+func (handler *Oracle_Handler) DoLastOperation(myServiceInfo *ServiceInfo) (brokerapi.LastOperation, error) {
 	//因为是同步模式，协议里面并没有说怎么处理啊，统一反馈成功吧！
 	return brokerapi.LastOperation{
 		State:       brokerapi.Succeeded,
@@ -257,12 +258,12 @@ func (handler *Oracle_sharedHandler) DoLastOperation(myServiceInfo *ServiceInfo)
 	}, nil
 }
 
-func (handler *Oracle_sharedHandler) DoDeprovision(myServiceInfo *ServiceInfo, asyncAllowed bool) (brokerapi.IsAsync, error) {
+func (handler *Oracle_Handler) DoDeprovision(myServiceInfo *ServiceInfo, asyncAllowed bool) (brokerapi.IsAsync, error) {
 
 
 	//初始化oracle的链接串
 	//db, err := sql.Open("oracle", myServiceInfo.Admin_user+":"+myServiceInfo.Admin_password+"@tcp("+myServiceInfo.Url+")/")
-	db, err := sql.Open("oci8", oracleAdminConnString)
+	db, err := sql.Open("oci8", handler.connString)
 	if err != nil {
 		return brokerapi.IsAsync(false), err
 	}
@@ -307,17 +308,19 @@ func (handler *Oracle_sharedHandler) DoDeprovision(myServiceInfo *ServiceInfo, a
 
 }
 
-func (handler *Oracle_sharedHandler) DoBind(myServiceInfo *ServiceInfo, bindingID string, details brokerapi.BindDetails) (brokerapi.Binding, Credentials, error) {
+func (handler *Oracle_Handler) DoBind(myServiceInfo *ServiceInfo, bindingID string, details brokerapi.BindDetails) (brokerapi.Binding, Credentials, error) {
 	
 	mycredentials := Credentials{
 		//Uri:      "oracle://" + newusername + ":" + newpassword + "@" + myServiceInfo.Url + "/" + myServiceInfo.Database,
-		Uri:      OracleConnString(myServiceInfo.Database, myServiceInfo.Password, oracleAddress, oracleSID),
-		Hostname: strings.Split(oracleAddress, ":")[0],
-		Port:     strings.Split(oracleAddress, ":")[1],
+		Uri:      OracleConnString(myServiceInfo.Database, myServiceInfo.Password, handler.adress, handler.sid),
+		Hostname: strings.Split(handler.adress, ":")[0],
+		Port:     strings.Split(handler.adress, ":")[1],
 		Username: myServiceInfo.User,
 		Password: myServiceInfo.Password,
 		Name:     myServiceInfo.Database,
 	}
+	
+	
 
 	myBinding := brokerapi.Binding{Credentials: mycredentials}
 
@@ -325,23 +328,79 @@ func (handler *Oracle_sharedHandler) DoBind(myServiceInfo *ServiceInfo, bindingI
 
 }
 
-func (handler *Oracle_sharedHandler) DoUnbind(myServiceInfo *ServiceInfo, mycredentials *Credentials) error {
+func (handler *Oracle_Handler) DoUnbind(myServiceInfo *ServiceInfo, mycredentials *Credentials) error {
 
 	return nil
 
 }
 
-func init() {
-	register("Oracle_Experimental", &Oracle_sharedHandler{})
+//=====================================================================
+
+func OracleConnString(user, password, address, sid string) string {
+	return fmt.Sprintf("%s:%s@%s/%s", user, password, address, sid)
+}
+
+type Oracle_Handler struct {
+	name string
 	
-	oracleAdminUser = getenv("ORACLEADMINUSER")         //共享实例和独立实例的管理员用户名
-	oracleAdminPassword = getenv("ORACLEADMINPASSWORD") //共享实例和独立实例的管理员密码
-	oracleAddress = getenv("ORACLEADDRESS")             //共享实例和独立实例的地址
-	oracleSID = getenv("ORACLESID")                     //共享实例和独立实例的system id
-	oracleDashboard = getenv("ORACLEDASHBOARD")         //dashboard地址
-	if len(oracleDashboard) < 3 {
-		oracleDashboard = ""
+	adminUser     string
+	adminPassword string
+	adress        string
+	sid           string
+	dashboard     string
+	
+	connString string
+}
+
+func newOracleHandler(name string) *Oracle_Handler {
+	return &Oracle_Handler {
+		name: name,
+	}
+}
+
+func (oh *Oracle_Handler) setEnvNames(envAaminuser, envAdminPassword, envAddress, envSID, envDashboard string) *Oracle_Handler {
+	
+	oh.adminUser = getenv(envAaminuser)         //共享实例和独立实例的管理员用户名
+	oh.adminPassword = getenv(envAdminPassword) //共享实例和独立实例的管理员密码
+	oh.adress = getenv(envAddress)              //共享实例和独立实例的地址
+	oh.sid = getenv(envSID)                     //共享实例和独立实例的system id
+	oh.dashboard = getenv(envDashboard)         //dashboard地址
+	
+	if len(oh.dashboard) < 3 {
+		oh.dashboard = ""
 	}
 	
-	oracleAdminConnString = OracleConnString(oracleAdminUser, oracleAdminPassword, oracleAddress, oracleSID)
+	oh.connString = OracleConnString(oh.adminUser, oh.adminPassword, oh.adress, oh.sid)
+	
+	return oh
+}
+
+func (oh *Oracle_Handler) register() *Oracle_Handler {
+	register("Oracle_" + oh.name, oh)
+	return oh
+}
+
+//=====================================================================
+
+func init() {
+	newOracleHandler("Experimental").
+		register().
+		setEnvNames(
+			"ORACLEADMINUSER", 
+			"ORACLEADMINPASSWORD", 
+			"ORACLEADDRESS", 
+			"ORACLESID", 
+			"ORACLEDASHBOARD",
+		)
+		
+	newOracleHandler("Offical").
+		register().
+		setEnvNames(
+			"ORACLEADMINUSER_OFFICIAL", 
+			"ORACLEADMINPASSWORD_OFFICIAL", 
+			"ORACLEADDRESS_OFFICIAL", 
+			"ORACLESID_OFFICIAL", 
+			"ORACLEDASHBOARD_OFFICIAL",
+		)
+		
 }
