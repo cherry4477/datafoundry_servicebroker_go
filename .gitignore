@@ -27,5 +27,6 @@ _testmain.go
 
 *.so.*
 dev*
+docker-build.sh
 oci-downloads
 docker-compose.yml

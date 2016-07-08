@@ -7,8 +7,6 @@ import (
 	"github.com/pivotal-cf/brokerapi"
 	"strings"
 	"fmt"
-	
-	_ "github.com/asiainfoLDP/datafoundry_servicebroker_go/handler/odc_daas_rest"
 )
 
 // https://github.com/rana/ora
@@ -34,7 +32,7 @@ import (
 //type Oracle_sharedHandler struct{}
 
 
-func (handler *Oracle_Handler) DoProvision(instanceID string, details brokerapi.ProvisionDetails, asyncAllowed bool) (brokerapi.ProvisionedServiceSpec, ServiceInfo, error) {
+func (handler *Oracle_Handler_Experimental) DoProvision(instanceID string, details brokerapi.ProvisionDetails, asyncAllowed bool) (brokerapi.ProvisionedServiceSpec, ServiceInfo, error) {
 	//初始化oracle的链接串
 	//db, err := sql.Open("oracle", myServiceInfo.Admin_user+":"+myServiceInfo.Admin_password+"@tcp("+myServiceInfo.Url+")/")
 	db, err := sql.Open("oci8", handler.connString)
@@ -252,7 +250,7 @@ CREATE TABLE %s
 	return provsiondetail, myServiceInfo, nil
 }
 
-func (handler *Oracle_Handler) DoLastOperation(myServiceInfo *ServiceInfo) (brokerapi.LastOperation, error) {
+func (handler *Oracle_Handler_Experimental) DoLastOperation(myServiceInfo *ServiceInfo) (brokerapi.LastOperation, error) {
 	//因为是同步模式，协议里面并没有说怎么处理啊，统一反馈成功吧！
 	return brokerapi.LastOperation{
 		State:       brokerapi.Succeeded,
@@ -260,7 +258,7 @@ func (handler *Oracle_Handler) DoLastOperation(myServiceInfo *ServiceInfo) (brok
 	}, nil
 }
 
-func (handler *Oracle_Handler) DoDeprovision(myServiceInfo *ServiceInfo, asyncAllowed bool) (brokerapi.IsAsync, error) {
+func (handler *Oracle_Handler_Experimental) DoDeprovision(myServiceInfo *ServiceInfo, asyncAllowed bool) (brokerapi.IsAsync, error) {
 
 
 	//初始化oracle的链接串
@@ -310,7 +308,7 @@ func (handler *Oracle_Handler) DoDeprovision(myServiceInfo *ServiceInfo, asyncAl
 
 }
 
-func (handler *Oracle_Handler) DoBind(myServiceInfo *ServiceInfo, bindingID string, details brokerapi.BindDetails) (brokerapi.Binding, Credentials, error) {
+func (handler *Oracle_Handler_Experimental) DoBind(myServiceInfo *ServiceInfo, bindingID string, details brokerapi.BindDetails) (brokerapi.Binding, Credentials, error) {
 	
 	mycredentials := Credentials{
 		//Uri:      "oracle://" + newusername + ":" + newpassword + "@" + myServiceInfo.Url + "/" + myServiceInfo.Database,
@@ -330,7 +328,7 @@ func (handler *Oracle_Handler) DoBind(myServiceInfo *ServiceInfo, bindingID stri
 
 }
 
-func (handler *Oracle_Handler) DoUnbind(myServiceInfo *ServiceInfo, mycredentials *Credentials) error {
+func (handler *Oracle_Handler_Experimental) DoUnbind(myServiceInfo *ServiceInfo, mycredentials *Credentials) error {
 
 	return nil
 
@@ -342,10 +340,8 @@ func OracleConnString(user, password, address, sid string) string {
 	return fmt.Sprintf("%s:%s@%s/%s", user, password, address, sid)
 }
 
-type Oracle_Handler struct {
+type Oracle_Handler_Experimental struct {
 	name string
-	
-	dedicated bool
 	
 	adminUser     string
 	adminPassword string
@@ -356,13 +352,13 @@ type Oracle_Handler struct {
 	connString string
 }
 
-func newOracleHandler(name string) *Oracle_Handler {
-	return &Oracle_Handler {
+func newOracleHandler_Experimental(name string) *Oracle_Handler_Experimental {
+	return &Oracle_Handler_Experimental {
 		name: name,
 	}
 }
 
-func (oh *Oracle_Handler) setEnvNames(envAaminuser, envAdminPassword, envAddress, envSID, envDashboard string) *Oracle_Handler {
+func (oh *Oracle_Handler_Experimental) setEnvNames(envAaminuser, envAdminPassword, envAddress, envSID, envDashboard string) *Oracle_Handler_Experimental {
 	
 	oh.adminUser = getenv(envAaminuser)         //共享实例和独立实例的管理员用户名
 	oh.adminPassword = getenv(envAdminPassword) //共享实例和独立实例的管理员密码
@@ -379,22 +375,16 @@ func (oh *Oracle_Handler) setEnvNames(envAaminuser, envAdminPassword, envAddress
 	return oh
 }
 
-func (oh *Oracle_Handler) register() *Oracle_Handler {
+func (oh *Oracle_Handler_Experimental) register() *Oracle_Handler_Experimental {
 	register("Oracle_" + oh.name, oh)
-	return oh
-}
-
-func (oh *Oracle_Handler) setDedicated(d bool) *Oracle_Handler {
-	oh.dedicated = d
 	return oh
 }
 
 //=====================================================================
 
 func init() {
-	newOracleHandler("Experimental").
+	newOracleHandler_Experimental("Experimental").
 		register().
-		setDedicated(false).
 		setEnvNames(
 			"ORACLEADMINUSER", 
 			"ORACLEADMINPASSWORD", 
@@ -403,17 +393,4 @@ func init() {
 			"ORACLEDASHBOARD",
 		)
 		
-	newOracleHandler("Dedicated").
-		register().
-		setDedicated(true).
-		setEnvNames(
-			"ORACLEADMINUSER_DEDICATED", 
-			"ORACLEADMINPASSWORD_DEDICATED", 
-			"ORACLEADDRESS_DEDICATED", 
-			"ORACLESID_DEDICATED", 
-			"ORACLEDASHBOARD_DEDICATED",
-		)
-		
 }
-
-// https://docs.oracle.com/cloud/latest/dbcs_dbaas/CSDBR/op-paas-service-dbcs-api-v1.1-instances-%7BidentityDomainId%7D-post.html
