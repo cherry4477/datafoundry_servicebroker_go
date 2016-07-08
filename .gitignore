@@ -26,5 +26,6 @@ _testmain.go
 *.prof
 
 *.so.*
+dev*
 oci-downloads
 docker-compose.yml

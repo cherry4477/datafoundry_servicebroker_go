@@ -7,6 +7,8 @@ import (
 	"github.com/pivotal-cf/brokerapi"
 	"strings"
 	"fmt"
+	
+	_ "github.com/asiainfoLDP/datafoundry_servicebroker_go/handler/odc_daas_rest"
 )
 
 // https://github.com/rana/ora
@@ -343,6 +345,8 @@ func OracleConnString(user, password, address, sid string) string {
 type Oracle_Handler struct {
 	name string
 	
+	dedicated bool
+	
 	adminUser     string
 	adminPassword string
 	adress        string
@@ -380,11 +384,17 @@ func (oh *Oracle_Handler) register() *Oracle_Handler {
 	return oh
 }
 
+func (oh *Oracle_Handler) setDedicated(d bool) *Oracle_Handler {
+	oh.dedicated = d
+	return oh
+}
+
 //=====================================================================
 
 func init() {
 	newOracleHandler("Experimental").
 		register().
+		setDedicated(false).
 		setEnvNames(
 			"ORACLEADMINUSER", 
 			"ORACLEADMINPASSWORD", 
@@ -393,14 +403,17 @@ func init() {
 			"ORACLEDASHBOARD",
 		)
 		
-	newOracleHandler("Offical").
+	newOracleHandler("Dedicated").
 		register().
+		setDedicated(true).
 		setEnvNames(
-			"ORACLEADMINUSER_OFFICIAL", 
-			"ORACLEADMINPASSWORD_OFFICIAL", 
-			"ORACLEADDRESS_OFFICIAL", 
-			"ORACLESID_OFFICIAL", 
-			"ORACLEDASHBOARD_OFFICIAL",
+			"ORACLEADMINUSER_DEDICATED", 
+			"ORACLEADMINPASSWORD_DEDICATED", 
+			"ORACLEADDRESS_DEDICATED", 
+			"ORACLESID_DEDICATED", 
+			"ORACLEDASHBOARD_DEDICATED",
 		)
 		
 }
+
+// https://docs.oracle.com/cloud/latest/dbcs_dbaas/CSDBR/op-paas-service-dbcs-api-v1.1-instances-%7BidentityDomainId%7D-post.html
