@@ -313,7 +313,7 @@ func init() {
 			level:   "PAAS",
 			edition: "EE",
 			shape:   "oc3",
-			usableStorage: "10",
+			usableStorage: "30",
 		})
 	
 	register("Oracle-Cloud_standalone-2", 
@@ -321,7 +321,7 @@ func init() {
 			level:   "PAAS",
 			edition: "EE_EP",
 			shape:   "oc4",
-			usableStorage: "20",
+			usableStorage: "30",
 		})
 	
 	/*
