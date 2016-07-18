@@ -21,7 +21,7 @@ ENV PKG_CONFIG_PATH=/usr/local/lib/pkgconfig
 RUN mkdir -p /usr/local/lib/pkgconfig && cp ./oci/oci8.pc /usr/local/lib/pkgconfig
 RUN tar xzvf oci/12_1/liboci.tar.gz -C oci/12_1 \
     && echo $(pwd)/oci/12_1 >> /etc/ld.so.conf \
-    && ldconfig
+    && ldconfig \
     && ls
 
 #RUN go get github.com/tools/godep \
