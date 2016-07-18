@@ -104,7 +104,7 @@ func (odc *OracleDaasClient) request (method string, url string, body []byte, ti
 	return client.Do(req)
 }
 
-const GeneralRequestTimeout = time.Duration(30) * time.Second
+const GeneralRequestTimeout = time.Duration(120) * time.Second
 
 func (odc *OracleDaasClient) doRequest (method, url string, bodyParams interface{}, into interface{}) (res *http.Response, err error) {
 	var body []byte
