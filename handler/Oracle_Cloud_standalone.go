@@ -128,6 +128,7 @@ func (handler *Oracle_Dedicated_Handler) DoProvision(instanceID string, details 
 	
 	serviceName := "svc-db-" + oraclecloudrest.NewThirteenLengthID()
 	
+	adminUsername := "system"
 	adminPassword := ""
 	
 	var config *oraclecloudrest.OracleDaasCreateConfig
@@ -138,29 +139,32 @@ func (handler *Oracle_Dedicated_Handler) DoProvision(instanceID string, details 
 		usableStorage := handler.usableStorage // GB
 		config = oraclecloudrest.NewOracleDaasCreateConfig_PaaS(serviceName, handler.edition, handler.shape, vmPublicKeyText, adminPassword, usableStorage)
 	}
-	res, err := oracleDaasClient.CreateDatabaseInstance(config)
-	if err != nil {
-		println("CreateDatabaseInstance:", err.Error())
-		return brokerapi.ProvisionedServiceSpec{}, ServiceInfo{}, err
-	}
 	
-	jobUrl := res.Header.Get("Location")
+	go func() {
+		res, err := oracleDaasClient.CreateDatabaseInstance(config)
+		if err != nil {
+			println("CreateDatabaseInstance:", err.Error())
+			return
+		}
+		
+		jobUrl := res.Header.Get("Location")
+		
+		fmt.Println("jobUrl =", jobUrl)
+		if handler.level == "PAAS" {
+			go ViewJobStatus(jobUrl, serviceName, adminUsername, adminPassword) // for testing only
+		}
+	}()
 	
 	myServiceInfo := ServiceInfo{
-		Url:            jobUrl,
-		Admin_user:     "system", // "root",
+		//Url:            jobUrl,
+		Admin_user:     adminUsername, // "root",
 		Admin_password: adminPassword,
 		Database:       serviceName,
 		User:           privateKeyText,
 		//Password:       newpassword,
 	}
 	
-	fmt.Println("jobUrl =", jobUrl)
-	if handler.level == "PAAS" {
-		go ViewJobStatus(jobUrl, serviceName, myServiceInfo.Admin_user, myServiceInfo.Admin_password) // for testing only
-	}
-	
-	provsiondetail := brokerapi.ProvisionedServiceSpec{DashboardURL: "", IsAsync: false}
+	provsiondetail := brokerapi.ProvisionedServiceSpec{DashboardURL: "", IsAsync: true}
 
 	return provsiondetail, myServiceInfo, nil
 }

@@ -469,10 +469,10 @@ func (odc *OracleDaasClient) ScaleDatabaseInstance (serviceId string, config *Or
 }
 */
 type JobStatusInfo struct {
-	Status     string `json:"status"`
-	JobStatus  string `json:"job_status"`
-	Message    string `json:"message"`
-	ServiceURI string `json:"service_uri"`
+	Status     string   `json:"status"`
+	JobStatus  string   `json:"job_status"`
+	Message    []string `json:"message"`
+	ServiceURI string   `json:"service_uri"`
 }
 
 // requestName: create | delete | scale
