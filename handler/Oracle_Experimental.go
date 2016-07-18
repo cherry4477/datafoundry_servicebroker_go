@@ -301,7 +301,7 @@ func DeleteOracleDbAndUser(connString, dbname, username string) error {
 func (handler *Oracle_Handler_Experimental) DoProvision(instanceID string, details brokerapi.ProvisionDetails, asyncAllowed bool) (brokerapi.ProvisionedServiceSpec, ServiceInfo, error) {
 	//初始化oracle的链接串
 	//db, err := sql.Open("oracle", myServiceInfo.Admin_user+":"+myServiceInfo.Admin_password+"@tcp("+myServiceInfo.Url+")/")
-	newdbname, newusername, newpassword, err := CreateOracleDbAndUser(handler.connString, "256M", false)
+	newdbname, newusername, newpassword, err := CreateOracleDbAndUser(handler.connString, "256M", handler.bigDbFile)
 	if err != nil {
 		return brokerapi.ProvisionedServiceSpec{}, ServiceInfo{}, err
 	}
@@ -387,12 +387,19 @@ type Oracle_Handler_Experimental struct {
 	
 	addressWithSid string
 	connString     string
+	
+	bigDbFile bool
 }
 
 func newOracleHandler_Experimental(name string) *Oracle_Handler_Experimental {
 	return &Oracle_Handler_Experimental {
 		name: name,
 	}
+}
+
+func (oh *Oracle_Handler_Experimental) setBigDbFile(big bool) *Oracle_Handler_Experimental {
+	oh.bigDbFile = big
+	return oh
 }
 
 func (oh *Oracle_Handler_Experimental) setEnvNames(envAaminuser, envAdminPassword, envAddress, envSID, envDashboard string) *Oracle_Handler_Experimental {
@@ -423,7 +430,8 @@ func init() {
 			"ORACLEADDRESS", 
 			"ORACLESID", 
 			"ORACLEDASHBOARD",
-		))
+		).
+		setBigDbFile(false))
 	
 	
 	register("Oracle_OracleCloud_Shared", newOracleHandler_Experimental("OracleCloud_Shared").
@@ -433,6 +441,7 @@ func init() {
 			"ORACLEADDRESS_ORACLECLOUDSHARED", 
 			"ORACLESID_ORACLECLOUDSHARED", 
 			"ORACLEDASHBOARD_ORACLECLOUDSHARED",
-		))
+		).
+		setBigDbFile(true))
 		
 }
