@@ -30,3 +30,4 @@ dev*
 docker-build.sh
 oci-downloads
 docker-compose.yml
+datafoundry_servicebroker_go
