@@ -12,6 +12,8 @@ import (
 	oraclecloudrest "github.com/asiainfoLDP/datafoundry_servicebroker_go/handler/oracle_cloud_rest"
 )
 
+const DevMode = true
+
 func init() {
 	/*
 	go func() {
@@ -261,6 +263,10 @@ func (handler *Oracle_Dedicated_Handler) DoBind(myServiceInfo *ServiceInfo, bind
 			Username: myServiceInfo.Admin_user,     // db root
 			Password: myServiceInfo.Admin_password, // db root password
 		}
+		
+		if DevMode {
+			go tryTestDbUsibility(uri)
+		}
 	}
 
 	myBinding := brokerapi.Binding{Credentials: *mycredentials}
@@ -315,7 +321,7 @@ func init() {
 	register("Oracle-Cloud_standalone-1", 
 		&Oracle_Dedicated_Handler{
 			level:   "PAAS",
-			edition: "EE",
+			edition: "SE",
 			shape:   "oc3",
 			usableStorage: "30",
 		})
@@ -323,7 +329,7 @@ func init() {
 	register("Oracle-Cloud_standalone-2", 
 		&Oracle_Dedicated_Handler{
 			level:   "PAAS",
-			edition: "EE_EP",
+			edition: "EE",
 			shape:   "oc4",
 			usableStorage: "30",
 		})
