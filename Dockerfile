@@ -27,6 +27,9 @@ RUN tar xzvf oci/12_1/liboci.tar.gz -C oci/12_1 \
 #RUN go get github.com/tools/godep \
 #    && godep go build 
 
+RUN export GO15VENDOREXPERIMENT=1 \
+    && echo GO15VENDOREXPERIMENT=$GO15VENDOREXPERIMENT
+
 RUN go build
 
 CMD ["sh", "-c", "./datafoundry_servicebroker_go"]
