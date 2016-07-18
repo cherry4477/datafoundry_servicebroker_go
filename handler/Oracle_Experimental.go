@@ -434,7 +434,7 @@ func init() {
 		setBigDbFile(false))
 	
 	
-	register("Oracle_OracleCloud_Shared", newOracleHandler_Experimental("OracleCloud_Shared").
+	register("Oracle-Cloud_shared", newOracleHandler_Experimental("Oracle-Cloud_shared").
 		setEnvNames(
 			"ORACLEADMINUSER_ORACLECLOUDSHARED", 
 			"ORACLEADMINPASSWORD_ORACLECLOUDSHARED", 

@@ -308,7 +308,7 @@ func init() {
 			getenv("ORACLE_CLOUD_PASSWORD"),
 		)
 	
-	register("Oracle_standalone_1", 
+	register("Oracle-Cloud_standalone-1", 
 		&Oracle_Dedicated_Handler{
 			level:   "PAAS",
 			edition: "EE",
@@ -316,7 +316,7 @@ func init() {
 			usableStorage: "50",
 		})
 	
-	register("Oracle_standalone_2", 
+	register("Oracle-Cloud_standalone-2", 
 		&Oracle_Dedicated_Handler{
 			level:   "PAAS",
 			edition: "EE_EP",
