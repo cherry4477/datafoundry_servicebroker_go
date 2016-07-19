@@ -201,15 +201,19 @@ func (handler *Oracle_Dedicated_Handler) DoLastOperation(myServiceInfo *ServiceI
 func (handler *Oracle_Dedicated_Handler) DoDeprovision(myServiceInfo *ServiceInfo, asyncAllowed bool) (brokerapi.IsAsync, error) {
 	serviceName := myServiceInfo.Database
 	
-	res, err := oracleDaasClient.DeleteDatabaseInstance (serviceName)
-	if err != nil {
-		return brokerapi.IsAsync(false), err
+	for range [3]struct{}{} {
+		res, err := oracleDaasClient.DeleteDatabaseInstance (serviceName)
+		if err != nil {
+			return brokerapi.IsAsync(false), err
+		} else {
+			jobId := res.Header.Get("Location")
+			//go func () {
+				_ = jobId
+			//}()
+			
+			break
+		}
 	}
-	
-	jobId := res.Header.Get("Location")
-	//go func () {
-		_ = jobId
-	//}()
 	
 	return brokerapi.IsAsync(false), nil
 }
@@ -312,10 +316,11 @@ var oracleDaasClient *oraclecloudrest.OracleDaasClient
 
 func init() {
 	oracleDaasClient = oraclecloudrest.NewOracleDaasClient(
-			getenv("ORACLE_CLOUD_REST_ENDPOINT"),
 			getenv("ORACLE_CLOUD_IDENTITY_DOMAIN_ID"),
 			getenv("ORACLE_CLOUD_USERNAME"),
 			getenv("ORACLE_CLOUD_PASSWORD"),
+			getenv("ORACLE_CLOUD_REST_ENDPOINT"),
+			getenv("ORACLE_CLOUD_REST_ENDPOINT_COMPUTE"),
 		)
 	
 	register("Oracle-Cloud_standalone-1", 

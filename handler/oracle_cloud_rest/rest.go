@@ -6,6 +6,7 @@ import (
 	"time"
 	"strings"
 	"bytes"
+	"sync"
 	//"bufio"
 	"io"
 	//"os"
@@ -39,38 +40,121 @@ func init() {
 //==============================================================
 
 type OracleDaasClient struct {
-	endPoint         string
 	identityDomainId string
-	requestUrlPrefix string
 	
 	username string
 	password string
-	//token    string
+	
+	// for DaaS
+	daasEndPoint  string
+	daasUrlPrefix string
+	token         string
+	
+	// for IaaS
+	iaasEndPoint  string
+	iaasUrlPrefix string
+	cookie        string
+	cookieMutex   sync.Mutex
 }
 
-func NewOracleDaasClient(endPoint, identityDomainId, username, password string) *OracleDaasClient {
-	endPoint = strings.TrimRight(endPoint, "/")
+func NewOracleDaasClient(identityDomainId, username, password, daasEndPoint, iaasEndPoint string) *OracleDaasClient {
+	daasEndPoint = strings.TrimRight(daasEndPoint, "/")
 	
-	if ! strings.HasPrefix(endPoint, "https://") {
-		endPoint = "https://" + endPoint
+	if ! strings.HasPrefix(daasEndPoint, "https://") {
+		daasEndPoint = "https://" + daasEndPoint
 	}
 	
 	odc := &OracleDaasClient{
-		endPoint:         endPoint,
 		identityDomainId: identityDomainId,
 		
 		username: username,
 		password: password,
+		
+		daasEndPoint: daasEndPoint,
+		iaasEndPoint: iaasEndPoint,
 	}
 	
-	odc.requestUrlPrefix = fmt.Sprintf("%s/paas/service/dbcs/api/v1.1/instances/%s", endPoint, identityDomainId)
+	odc.daasUrlPrefix = fmt.Sprintf("%s/paas/service/dbcs/api/v1.1/instances/%s", daasEndPoint, identityDomainId)
 	
-	//odc.token = fmt.Sprintf("Basic %s", getMd5(fmt.Sprintf("%s:%s", username, password)))
+	req, _ := http.NewRequest("", "/", nil)
+	req.SetBasicAuth(odc.username, odc.password)
+	odc.token = req.Header.Get("Authorization")
+	
+	odc.iaasUrlPrefix = odc.iaasEndPoint
+	go odc.updateCookie()
 	
 	return odc
 }
 
-func (odc *OracleDaasClient) request (method string, url string, body []byte, timeout time.Duration) (*http.Response, error) {
+func (odc *OracleDaasClient) updateCookie() {
+	requestCookie := func() {
+		for range [5]struct{}{} {
+			bodyParams := struct {
+				User     string `json:"user"`
+				Password string `json:"passworduser"`
+			}{
+				User:     odc.username,
+				Password: odc.password,
+			}
+			
+			url := fmt.Sprintf("%s/authenticate/", odc.iaasUrlPrefix)
+			res, err := odc.doRequest(odc.cookieRequestModifier, "POST", url, bodyParams, nil)
+			if err == nil {
+				newc := res.Header.Get("Set-Cookie")
+				odc.SetCookie(newc)
+			
+				println("requestCookie new cookie: ", newc)
+				break
+			}
+			
+			println("requestCookie error: ", err.Error())
+			
+			<- time.After(5 * time.Second)
+		}
+	}
+	
+	requestCookie()
+	
+	ticker := time.Tick(3 * time.Hour)
+	for range ticker {
+		requestCookie()
+	}
+}
+
+func (odc *OracleDaasClient) Cookie() string {
+	var c string
+	odc.cookieMutex.Lock()
+	c = odc.cookie
+	odc.cookieMutex.Unlock()
+	return c
+}
+
+func (odc *OracleDaasClient) SetCookie(c string) {
+	odc.cookieMutex.Lock()
+	odc.cookie = c
+	odc.cookieMutex.Unlock()
+}
+
+type requestModifier func (req *http.Request)
+
+func (odc *OracleDaasClient) cookieRequestModifier (req *http.Request) {
+	req.Header.Set("Content-Type", "application/oracle-compute-v3+json")
+}
+
+func (odc *OracleDaasClient) iaasRequestModifier (req *http.Request) {
+	req.Header.Set("Content-Type", "application/oracle-compute-v3+json")
+	req.Header.Set("Accept", "application/oracle-compute-v3+json")
+	req.Header.Set("Cookie", odc.Cookie())
+}
+
+func (odc *OracleDaasClient) daasRequestModifier (req *http.Request) {
+	req.Header.Set("Content-Type", "application/json")
+	//req.Header.Set("X-ID-TENANT-NAME", odc.identityDomainId)
+	req.Header["X-ID-TENANT-NAME"] = []string{odc.identityDomainId}
+	req.Header.Set("Authorization", odc.token)
+}
+
+func (odc *OracleDaasClient) request (reqMod requestModifier, method string, url string, body []byte, timeout time.Duration) (*http.Response, error) {
 	var req *http.Request
 	var err error
 	if len(body) == 0 {
@@ -83,11 +167,7 @@ func (odc *OracleDaasClient) request (method string, url string, body []byte, ti
 		return nil, err
 	}
 	
-	req.Header.Set("Content-Type", "application/json")
-	//req.Header.Set("X-ID-TENANT-NAME", odc.identityDomainId)
-	req.Header["X-ID-TENANT-NAME"] = []string{odc.identityDomainId}
-	//req.Header.Set("Authorization", odc.token)
-	req.SetBasicAuth(odc.username, odc.password)
+	reqMod(req)
 	
 	transCfg := &http.Transport{
 		TLSClientConfig: &tls.Config{InsecureSkipVerify: true},
@@ -106,7 +186,7 @@ func (odc *OracleDaasClient) request (method string, url string, body []byte, ti
 
 const GeneralRequestTimeout = time.Duration(120) * time.Second
 
-func (odc *OracleDaasClient) doRequest (method, url string, bodyParams interface{}, into interface{}) (res *http.Response, err error) {
+func (odc *OracleDaasClient) doRequest (reqMod requestModifier, method, url string, bodyParams interface{}, into interface{}) (res *http.Response, err error) {
 	var body []byte
 	if bodyParams != nil {
 		body, err = json.Marshal(bodyParams)
@@ -115,7 +195,7 @@ func (odc *OracleDaasClient) doRequest (method, url string, bodyParams interface
 		}
 	}
 	
-	res, err = odc.request(method, url, body, GeneralRequestTimeout)
+	res, err = odc.request(reqMod, method, url, body, GeneralRequestTimeout)
 	if err != nil {
 		return
 	}
@@ -146,23 +226,23 @@ func (odc *OracleDaasClient) doRequest (method, url string, bodyParams interface
 }
 
 func (odc *OracleDaasClient) GetUrl (url string, into interface{}) (res *http.Response, err error) {
-	return odc.doRequest("GET", url, nil, into)
+	return odc.doRequest(odc.daasRequestModifier, "GET", url, nil, into)
 }
 
 func (odc *OracleDaasClient) Get (uri string, into interface{}) (res *http.Response, err error) {
-	return odc.doRequest("GET", odc.requestUrlPrefix + uri, nil, into)
+	return odc.doRequest(odc.daasRequestModifier, "GET", odc.daasUrlPrefix + uri, nil, into)
 }
 
 func (odc *OracleDaasClient) Delete (uri string, into interface{}) (res *http.Response, err error) {
-	return odc.doRequest("DELETE", odc.requestUrlPrefix + uri, nil, into)
+	return odc.doRequest(odc.daasRequestModifier, "DELETE", odc.daasUrlPrefix + uri, nil, into)
 }
 
 func (odc *OracleDaasClient) Post (uri string, body interface{}, into interface{}) (res *http.Response, err error) {
-	return odc.doRequest("POST", odc.requestUrlPrefix + uri, body, into)
+	return odc.doRequest(odc.daasRequestModifier, "POST", odc.daasUrlPrefix + uri, body, into)
 }
 
 func (odc *OracleDaasClient) Put (uri string, body interface{}, into interface{}) (res *http.Response, err error) {
-	return odc.doRequest("PUT", odc.requestUrlPrefix + uri, body, into)
+	return odc.doRequest(odc.daasRequestModifier, "PUT", odc.daasUrlPrefix + uri, body, into)
 }
 
 //===============================================================
@@ -478,6 +558,61 @@ type JobStatusInfo struct {
 // requestName: create | delete | scale
 func (odc *OracleDaasClient) ViewJobStatus(requestName, jobUrl string, result *JobStatusInfo) (res *http.Response, err error) {
 	return odc.GetUrl(jobUrl, result)
+}
+
+//---
+
+/*
+{
+  "dst_list": "seclist:/Compute-acme/jack.jones@example.com/allowed_video_servers",
+  "name": "/Compute-acme/jack.jones@example.com/es_to_videoservers_stream",
+  "src_list": "seciplist:/Compute-acme/jack.jones@example.com/es_iplist",
+  "application": "/Compute-acme/jack.jones@example.com/video_streaming_udp",
+  "action": "PERMIT",
+  "disabled": false
+}
+
+Results per page:	
+8 result(s) as of Jul 19, 2016 8:33:13 AM UTCRefresh
+							
+Status   Rule Name   Source   Destination   Ports   Description   Rule Type   Actions
+This access rule is enabled.	ora_p2_ssh	PUBLIC-INTERNET	DB	22	 	DEFAULT	
+This access rule is enabled.	ora_p2_dblistener	PUBLIC-INTERNET	DB	1521	 	DEFAULT	
+This access rule is disabled.	ora_p2_http	PUBLIC-INTERNET	DB	80	 	DEFAULT	
+This access rule is disabled.	ora_p2_httpssl	PUBLIC-INTERNET	DB	443	 	DEFAULT	
+
+*/
+
+type SecurityRuleUpdate struct {
+	DstList     string `json:"dst_list"`
+	Name        string `json:"name"`
+	SrcList     string `json:"src_list"`
+	Application string `json:"application"`
+	Action      string `json:"action"`
+	Disabled    bool   `json:"disabled"`
+}
+
+// source: "PUBLIC-INTERNET"
+// destination: "DB"
+// rule-name: "ora_p2_dblistener"
+
+
+// todo: oracle docs is not very clear. Not successful to enable rules.
+func (odc *OracleDaasClient) SetSecurityRuleEnabled (instanceName, ruleName, sourceName, destName string, enabled bool) (res *http.Response, err error) {
+	body := &SecurityRuleUpdate{
+		DstList:     fmt.Sprintf("seclist:/Compute-%s/%s/%s", odc.identityDomainId, odc.username, destName),
+		Name:        fmt.Sprintf("/Compute-%s/%s/%s", odc.identityDomainId, odc.username, ruleName) ,
+		SrcList:     fmt.Sprintf("seciplist:/Compute-%s/%s/%s", odc.identityDomainId, odc.username, sourceName),
+		Application: fmt.Sprintf("/Compute-%s/%s/%s", odc.identityDomainId, odc.username, instanceName),
+		Action:      "PERMIT",
+		Disabled:    !enabled,
+	}
+	
+	into := &SecurityRuleUpdate{}
+	
+	url := fmt.Sprintf("%s/secrule/Compute-%s/%s/%s", odc.iaasUrlPrefix, odc.identityDomainId, odc.username, ruleName)
+	
+	return odc.doRequest(odc.iaasRequestModifier, "PUT", url, body, into)
 }
 
 //===============================================================
