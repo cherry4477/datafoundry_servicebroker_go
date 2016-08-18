@@ -596,7 +596,6 @@ type SecurityRuleUpdate struct {
 // destination: "DB"
 // rule-name: "ora_p2_dblistener"
 
-
 // todo: oracle docs is not very clear. Not successful to enable rules.
 func (odc *OracleDaasClient) SetSecurityRuleEnabled (instanceName, ruleName, sourceName, destName string, enabled bool) (res *http.Response, err error) {
 	body := &SecurityRuleUpdate{
