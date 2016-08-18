@@ -352,7 +352,7 @@ func (handler *Oracle_Handler_Experimental) DoBind(myServiceInfo *ServiceInfo, b
 	
 	mycredentials := Credentials{
 		//Uri:      "oracle://" + newusername + ":" + newpassword + "@" + myServiceInfo.Url + "/" + myServiceInfo.Database,
-		Uri:      OracleConnString(myServiceInfo.Database, myServiceInfo.Password, handler.adress, handler.sid),
+		Uri:      OracleConnString(myServiceInfo.User, myServiceInfo.Password, handler.adress, handler.sid),
 		Hostname: strings.Split(handler.adress, ":")[0],
 		Port:     strings.Split(handler.adress, ":")[1],
 		Username: myServiceInfo.User,
