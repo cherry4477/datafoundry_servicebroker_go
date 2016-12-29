@@ -179,6 +179,23 @@ func (myBroker *myServiceBroker) Provision(
 		return brokerapi.ProvisionedServiceSpec{}, errors.New("Internal Error!!")
 	}
 
+	succeeded := false
+	defer func() {
+		if succeeded {
+			return
+		}
+
+		// if etcd failed to save, then deprovision the just created service.
+		// The reason is bsi controller will call provision periodically until provision succeeds.
+
+		logger.Info("ETCD save failed, so to Deprovision service "+service_name+" plan "+plan_name)
+
+		_, err := myHandler.DoDeprovision(&myServiceInfo, asyncAllowed)
+		if err != nil {
+			logger.Error("ETCD save failed, do Deprovision service "+service_name+" plan "+plan_name+", but error:", err)
+		}
+	}()
+
 	//为隐藏属性添加上必要的变量
 	myServiceInfo.Service_name = service_name
 	myServiceInfo.Plan_name = plan_name
@@ -212,8 +229,11 @@ func (myBroker *myServiceBroker) Provision(
 	} else {
 		logger.Debug("Successful create banding directory of  "+instanceID+" in etcd", nil)
 	}
+
 	//完成所有操作后，返回DashboardURL和是否异步的标志
 	logger.Info("Successful create instance " + instanceID)
+
+	succeeded = true
 	return provsiondetail, nil
 }
 
