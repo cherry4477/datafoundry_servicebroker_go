@@ -27,6 +27,8 @@ func (handler *Mongodb_aws_sharedHandler) DoProvision(instanceID string, details
 		return brokerapi.ProvisionedServiceSpec{}, ServiceInfo{}, err
 	}
 
+	//todo: looks the user/pass pair is never used, remove it?
+	
 	//创建一个名为instanceID的数据库，并随机的创建用户名和密码，这个用户名是该数据库的管理员
 	newdb := session.DB(instanceID)
 	newusername := getguid()

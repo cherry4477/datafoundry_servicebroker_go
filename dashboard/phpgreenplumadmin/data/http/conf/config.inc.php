@@ -2,6 +2,14 @@
 $conf['servers'][0]['desc'] = 'PostgreSQL';
 $conf['servers'][0]['host'] = 'greenplumshare.servicebroker.dataos.io';
 $conf['servers'][0]['port'] = 5432;
+
+if (!empty($_ENV['GREEPLUM_HOST'])) {
+  $conf['servers'][0]['host'] = getenv('GREEPLUM_HOST')
+}
+if (!empty($_ENV['GREEPLUM_PORT'])) {
+  $conf['servers'][0]['port'] = getenv('GREEPLUM_PORT')
+}
+
 $conf['servers'][0]['sslmode'] = 'allow';
 $conf['servers'][0]['defaultdb'] = 'share';
 $conf['servers'][0]['pg_dump_path'] = '/usr/bin/pg_dump';

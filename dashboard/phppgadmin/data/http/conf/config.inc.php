@@ -2,6 +2,14 @@
 $conf['servers'][0]['desc'] = 'PostgreSQL';
 $conf['servers'][0]['host'] = 'postgresqlshare.servicebroker.dataos.io';
 $conf['servers'][0]['port'] = 5432;
+
+if (!empty($_ENV['POSTRGRE_HOST'])) {
+  $conf['servers'][0]['host'] = getenv('POSTRGRE_HOST')
+}
+if (!empty($_ENV['POSTRGRE_PORT'])) {
+  $conf['servers'][0]['port'] = getenv('POSTRGRE_PORT')
+}
+
 $conf['servers'][0]['sslmode'] = 'allow';
 $conf['servers'][0]['defaultdb'] = 'postgres';
 $conf['servers'][0]['pg_dump_path'] = '/usr/bin/pg_dump';
